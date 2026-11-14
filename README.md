@@ -3,7 +3,7 @@
 **An AI support assistant for small businesses. It answers only from your own website and documents, cites every source, and hands hard questions to a human. Businesses bring their own AI key.**
 
 **Status:** Phase 1 in progress (Week 1: accounts, approval and owner dashboard). Free pilot for small businesses.
-**Live demo:** _add your Vercel link here_ (see `/demo` for the sample Ledgerly bot)
+**Live:** https://citedesk-app.vercel.app (sample bot at [/demo](https://citedesk-app.vercel.app/demo))
 **Prototype:** CiteDesk grew out of the [Ledgerly Support Agent](https://github.com/OluwafemiPaul/ai-support-agent).
 
 ## What it does
