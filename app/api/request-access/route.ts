@@ -78,12 +78,14 @@ export async function POST(req: Request) {
 
   await Promise.all([
     sendEmail({
+      kind: "request_received",
       to: email,
       subject: "We received your CiteDesk request",
       text: `Hi ${contact_name},\n\nThanks for your interest in CiteDesk for ${business_name}. A person reviews every request, usually within 2 business days. We will email you a sign in link once you are approved.\n\nThe CiteDesk team`,
     }),
     platformOwnerEmail()
       ? sendEmail({
+          kind: "owner_new_request",
           to: platformOwnerEmail(),
           replyTo: email,
           subject: `New CiteDesk request: ${business_name}`,

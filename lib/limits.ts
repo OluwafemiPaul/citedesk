@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { sendEmail } from "@/lib/email";
+import { addNotice } from "@/lib/notices";
 import { platformOwnerEmail } from "@/lib/auth";
 import { SITE_URL } from "@/lib/config";
 import { estimateCost } from "@/lib/cost";
@@ -132,7 +133,8 @@ export async function recordUsage(accountId: string, delta: Partial<Usage>) {
       level === 100 ? "This feature is now paused until next month or until the limit is raised." : "No action is needed yet."
     }\n\n${SITE_URL}`;
     const to = [acct.contact_email, platformOwnerEmail()].filter(Boolean);
-    await sendEmail({ to, subject: `CiteDesk: ${m.label} at ${level}% for ${acct.name}`, text });
+    await addNotice(accountId, "limit_alert", `${m.label} at ${level}% of your monthly limit`, text);
+    await sendEmail({ kind: "limit_alert", accountId, to, subject: `CiteDesk: ${m.label} at ${level}% for ${acct.name}`, text });
   }
   await checkTotalCostAlert();
   return usage;
@@ -154,6 +156,7 @@ export async function checkTotalCostAlert() {
   await admin.from("account_events").insert({ account_id: null, event: "cost_alert", detail: { month, total } });
   if (platformOwnerEmail()) {
     await sendEmail({
+      kind: "cost_alert",
       to: platformOwnerEmail(),
       subject: `CiteDesk: estimated cost passed $${settings.cost_alert_usd}`,
       text: `The estimated platform cost this month is $${total.toFixed(2)}, above your alert amount of $${settings.cost_alert_usd}.\n\nReview usage: ${SITE_URL}/owner`,

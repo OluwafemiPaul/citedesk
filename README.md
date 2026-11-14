@@ -36,7 +36,7 @@ You need Node.js 20 or newer and a free [Supabase](https://supabase.com) project
    npm install
    cp .env.example .env.local
    ```
-2. In Supabase, open **SQL Editor**, paste the contents of `supabase/migrations/0001_foundation.sql`, and run it.
+2. In Supabase, open **SQL Editor** and run each file in `supabase/migrations` in order (`0001_foundation.sql`, then `0002_email_log_and_notices.sql`).
 3. Fill in `.env.local`: your Supabase URL and keys, and your email as `PLATFORM_OWNER_EMAIL`.
 4. In Supabase, open **Authentication, URL Configuration** and add `http://localhost:3000/auth/callback` to Redirect URLs.
 5. Start it:
@@ -45,11 +45,15 @@ You need Node.js 20 or newer and a free [Supabase](https://supabase.com) project
    ```
 6. Open http://localhost:3000/login, sign in with your owner email, and go to `/owner`.
 
-Without Resend or Turnstile keys, emails are printed to the terminal and the bot check is skipped, so everything still works locally.
+Without email settings or Turnstile keys, emails are printed to the terminal and the bot check is skipped, so everything still works locally.
+
+### Email without a domain
+
+CiteDesk can send through any SMTP account, including a free Gmail with an app password (about 500 recipients a day). Set `SMTP_USER`, `SMTP_PASS` and `EMAIL_FROM` in your environment, and put the same Gmail details in Supabase under **Authentication, Emails, SMTP Settings** so sign in links reach everyone. Once you own a domain, set `RESEND_API_KEY` and `EMAIL_FROM` instead. Every email attempt appears in the **Email log** on the owner dashboard, with the reason if it failed, and businesses also see important messages as notices in their dashboard.
 
 ## Tech
 
-Next.js 16, React 19, TypeScript, Tailwind CSS 4, Supabase (Postgres, Auth, row level security), Resend, Cloudflare Turnstile, Anthropic and OpenAI APIs, Vercel.
+Next.js 16, React 19, TypeScript, Tailwind CSS 4, Supabase (Postgres, Auth, row level security), Nodemailer (SMTP) or Resend, Cloudflare Turnstile, Anthropic and OpenAI APIs, Vercel.
 
 ## License
 

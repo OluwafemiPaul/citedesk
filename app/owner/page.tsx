@@ -3,7 +3,8 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { currentMonth, EMPTY_USAGE, LIMIT_LABELS, METERED, withDefaults, type Limits, type Usage } from "@/lib/limits";
 import { estimateCost, formatUsd } from "@/lib/cost";
 import { SiteHeader } from "@/components/SiteHeader";
-import { approveRequest, askForInfo, declineRequest, setAccountStatus, updateLimits, updateSettings } from "./actions";
+import { approveRequest, askForInfo, declineRequest, sendTestEmail, setAccountStatus, updateLimits, updateSettings } from "./actions";
+import { emailProvider } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Owner dashboard | CiteDesk" };
@@ -40,12 +41,15 @@ function Meter({ used, limit }: { used: number; limit: number }) {
 export default async function OwnerPage() {
   const owner = await requireOwner();
   const admin = supabaseAdmin();
-  const [{ data: requests }, { data: accounts }, { data: usageRows }, { data: settings }] = await Promise.all([
+  const [{ data: requests }, { data: accounts }, { data: usageRows }, { data: settings }, { data: emails }] = await Promise.all([
     admin.from("access_requests").select("*").in("status", ["new", "info_requested"]).order("created_at", { ascending: false }).limit(100),
     admin.from("accounts").select("*").neq("status", "declined").order("created_at", { ascending: false }),
     admin.from("usage_monthly").select("*").eq("month", currentMonth()),
     admin.from("platform_settings").select("*").eq("id", 1).single(),
+    admin.from("email_log").select("id,created_at,kind,to_addresses,subject,body,provider,status,error").order("created_at", { ascending: false }).limit(50),
   ]);
+  const failedEmails = (emails ?? []).filter((e) => e.status === "failed").length;
+  const provider = emailProvider();
 
   const usageBy = new Map<string, Usage>((usageRows ?? []).map((u) => [u.account_id, { ...EMPTY_USAGE, ...u }]));
   const rows = (accounts ?? []).map((a) => {
@@ -216,6 +220,44 @@ export default async function OwnerPage() {
             </label>
             <button className="rounded-lg bg-indigo-600 px-3 py-1.5 font-medium text-white">Save</button>
           </form>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold">Email log</h2>
+              <p className="text-xs text-slate-500">
+                Sender: {provider === "smtp" ? `Gmail or SMTP (${process.env.SMTP_USER ?? "not set"})` : provider === "resend" ? "Resend" : "none set, emails are only printed to the server log"}
+                {failedEmails > 0 && <span className="ml-2 font-medium text-red-700">{failedEmails} failed in the last 50</span>}
+              </p>
+            </div>
+            <form action={sendTestEmail} className="flex items-center gap-2 text-sm">
+              <input name="to" type="email" placeholder={owner.email} className="w-56 rounded border border-slate-300 px-2 py-1" />
+              <button className="rounded-lg border border-slate-300 px-3 py-1.5 hover:bg-slate-50">Send test email</button>
+            </form>
+          </div>
+          {!emails?.length ? (
+            <p className="mt-3 text-sm text-slate-500">No emails yet.</p>
+          ) : (
+            <ul className="mt-3 divide-y divide-slate-100 text-sm">
+              {emails.map((e) => (
+                <li key={e.id} className="py-2">
+                  <details>
+                    <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1">
+                      <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${e.status === "sent" ? "bg-green-50 text-green-800" : e.status === "failed" ? "bg-red-50 text-red-800" : "bg-slate-100 text-slate-600"}`}>{e.status}</span>
+                      <span className="text-xs text-slate-500">{new Date(e.created_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+                      <span className="text-xs text-slate-500">{e.kind}</span>
+                      <span>{e.to_addresses.join(", ")}</span>
+                      <span className="text-slate-600">{e.subject}</span>
+                    </summary>
+                    {e.error && <p className="mt-2 text-xs text-red-700">Reason: {e.error}</p>}
+                    <p className="mt-2 text-xs text-slate-500">If this email did not arrive, copy the text below and send it from your own inbox.</p>
+                    <pre className="mt-1 whitespace-pre-wrap rounded-lg bg-slate-50 p-3 text-xs text-slate-700">{e.body}</pre>
+                  </details>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       </main>
     </>

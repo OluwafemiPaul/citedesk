@@ -39,6 +39,12 @@ export default async function BusinessHome() {
 
   const { data: account } = await supabaseAdmin().from("accounts").select("*").eq("id", me.account_id).single();
   const usage = await getUsage(me.account_id);
+  const { data: notices } = await supabaseAdmin()
+    .from("notices")
+    .select("id,created_at,title,body")
+    .eq("account_id", me.account_id)
+    .order("created_at", { ascending: false })
+    .limit(10);
   const limits = withDefaults(account?.limits);
 
   return (
@@ -54,6 +60,24 @@ export default async function BusinessHome() {
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
             Your account is paused, so your bot shows an offline message. Your data is safe. Reply to any CiteDesk email to resolve this.
           </div>
+        )}
+
+        {!!notices?.length && (
+          <section className="rounded-2xl border border-slate-200 bg-white p-6">
+            <h2 className="font-semibold">Notices</h2>
+            <p className="text-xs text-slate-500">Everything we email you also appears here, in case an email goes to spam.</p>
+            <ul className="mt-3 divide-y divide-slate-100 text-sm">
+              {notices.map((n) => (
+                <li key={n.id} className="py-2">
+                  <div className="flex justify-between gap-3">
+                    <span className="font-medium">{n.title}</span>
+                    <span className="shrink-0 text-xs text-slate-500">{new Date(n.created_at).toLocaleDateString("en-US", { dateStyle: "medium" })}</span>
+                  </div>
+                  <p className="mt-1 whitespace-pre-wrap text-slate-600">{n.body}</p>
+                </li>
+              ))}
+            </ul>
+          </section>
         )}
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6">
