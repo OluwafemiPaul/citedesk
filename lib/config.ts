@@ -15,3 +15,14 @@ export function isSupabaseConfigured() {
 }
 
 export const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
+
+// Time zone for dates shown on server rendered pages (Vercel servers run in UTC).
+export const DISPLAY_TIMEZONE = process.env.DISPLAY_TIMEZONE || "America/Chicago";
+
+export function formatDateTime(d: string | Date, withTime = true) {
+  return new Date(d).toLocaleString("en-US", {
+    timeZone: DISPLAY_TIMEZONE,
+    dateStyle: "medium",
+    ...(withTime ? { timeStyle: "short" as const } : {}),
+  });
+}

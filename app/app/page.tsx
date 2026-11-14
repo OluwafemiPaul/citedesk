@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/config";
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
@@ -71,7 +72,7 @@ export default async function BusinessHome() {
                 <li key={n.id} className="py-2">
                   <div className="flex justify-between gap-3">
                     <span className="font-medium">{n.title}</span>
-                    <span className="shrink-0 text-xs text-slate-500">{new Date(n.created_at).toLocaleDateString("en-US", { dateStyle: "medium" })}</span>
+                    <span className="shrink-0 text-xs text-slate-500">{formatDateTime(n.created_at, false)}</span>
                   </div>
                   <p className="mt-1 whitespace-pre-wrap text-slate-600">{n.body}</p>
                 </li>

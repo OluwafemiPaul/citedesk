@@ -1,3 +1,4 @@
+import { formatDateTime } from "@/lib/config";
 import { requireOwner } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { currentMonth, EMPTY_USAGE, LIMIT_LABELS, METERED, withDefaults, type Limits, type Usage } from "@/lib/limits";
@@ -119,7 +120,7 @@ export default async function OwnerPage() {
                         )}
                       </p>
                       <p className="text-xs text-slate-500">
-                        {r.business_type || "Type not given"} · about {r.page_estimate ?? "?"} pages · {new Date(r.created_at).toLocaleString()}
+                        {r.business_type || "Type not given"} · about {r.page_estimate ?? "?"} pages · {formatDateTime(r.created_at)}
                       </p>
                     </div>
                     <form action={approveRequest}>
@@ -245,7 +246,7 @@ export default async function OwnerPage() {
                   <details>
                     <summary className="flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1">
                       <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${e.status === "sent" ? "bg-green-50 text-green-800" : e.status === "failed" ? "bg-red-50 text-red-800" : "bg-slate-100 text-slate-600"}`}>{e.status}</span>
-                      <span className="text-xs text-slate-500">{new Date(e.created_at).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" })}</span>
+                      <span className="text-xs text-slate-500">{formatDateTime(e.created_at)}</span>
                       <span className="text-xs text-slate-500">{e.kind}</span>
                       <span>{e.to_addresses.join(", ")}</span>
                       <span className="text-slate-600">{e.subject}</span>
