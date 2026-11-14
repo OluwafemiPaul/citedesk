@@ -176,6 +176,20 @@ as $$
 $$;
 revoke execute on function public.add_usage from public, anon, authenticated;
 
+-- Explicit access grants ------------------------------------------------------
+-- Works with "Automatically expose new tables" turned OFF in Supabase.
+-- The server (service_role) can do everything; signed in users can only read, and
+-- row level security below decides which rows. Visitors who are not signed in (anon) get nothing.
+
+grant usage on schema public to anon, authenticated, service_role;
+grant all on all tables in schema public to service_role;
+grant all on all sequences in schema public to service_role;
+grant execute on all functions in schema public to service_role;
+grant select on accounts, profiles, access_requests, account_events, usage_monthly, platform_settings to authenticated;
+grant execute on function public.is_platform_owner() to authenticated;
+grant execute on function public.my_account_id() to authenticated;
+revoke execute on function public.add_usage from public, anon, authenticated;
+
 -- Row level security ----------------------------------------------------------
 -- Rule of thumb: the platform owner can read everything; a business owner can read
 -- only their own account. All writes that matter go through the server, which uses
