@@ -11,7 +11,7 @@ export async function POST(req: Request) {
   if (!isSupabaseConfigured()) return NextResponse.json({ error: "Sign in is not available on this copy yet." }, { status: 503 });
   const body = await req.json().catch(() => ({}));
   const email = String(body.email ?? "").trim().toLowerCase().slice(0, 200);
-  const next = typeof body.next === "string" && body.next.startsWith("/") ? body.next : "/app";
+  const next = typeof body.next === "string" && body.next.startsWith("/") && !body.next.startsWith("//") ? body.next : "/app";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
 
   let allowed = email === platformOwnerEmail();

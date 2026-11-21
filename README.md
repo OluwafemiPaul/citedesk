@@ -47,6 +47,10 @@ You need Node.js 20 or newer and a free [Supabase](https://supabase.com) project
 
 Without email settings or Turnstile keys, emails are printed to the terminal and the bot check is skipped, so everything still works locally.
 
+### Sign in emails
+
+In Supabase, open **Authentication, Emails, Templates** and paste `supabase/email-templates/sign-in.html` into both **Magic link** and **Confirm signup** (subject: `Your CiteDesk sign in code`). The email then carries a code that works in any browser, plus the link. Keep **Email OTP Length** at 6 under **Sign In / Providers, Email**.
+
 ### Email without a domain
 
 CiteDesk can send through any SMTP account, including a free Gmail with an app password (about 500 recipients a day). Set `SMTP_USER`, `SMTP_PASS` and `EMAIL_FROM` in your environment, and put the same Gmail details in Supabase under **Authentication, Emails, SMTP Settings** so sign in links reach everyone. Once you own a domain, set `RESEND_API_KEY` and `EMAIL_FROM` instead. Every email attempt appears in the **Email log** on the owner dashboard, with the reason if it failed, and businesses also see important messages as notices in their dashboard.

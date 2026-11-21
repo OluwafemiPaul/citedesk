@@ -1,0 +1,11 @@
+<!-- Paste into Supabase: Authentication, Emails, Templates.
+     Use it for BOTH "Magic link" and "Confirm signup" (first time sign ins use Confirm signup). -->
+<div style="font-family:system-ui,sans-serif;font-size:15px;line-height:1.5;color:#0f172a;max-width:480px">
+  <h2 style="margin:0 0 12px">Sign in to CiteDesk</h2>
+  <p>Your sign in code is:</p>
+  <p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:8px 0 16px">{{ .Token }}</p>
+  <p>Type it on the CiteDesk sign in page. It works on any device or browser.</p>
+  <p>Or click this link from the same browser where you asked to sign in:<br>
+    <a href="{{ .ConfirmationURL }}">Sign in to CiteDesk</a></p>
+  <p style="color:#64748b;font-size:13px">The code and link expire in 1 hour. If you did not ask to sign in, you can ignore this email.</p>
+</div>
