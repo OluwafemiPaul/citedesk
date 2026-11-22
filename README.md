@@ -19,7 +19,7 @@
 
 | Week | Scope | Status |
 |---|---|---|
-| 1 | Landing page, request access, owner approval, sign in, owner dashboard, plan limits, usage alerts | In progress |
+| 1 | Landing page, request access, owner approval, sign in, owner dashboard, plan limits, usage alerts | Done |
 | 2 | Setup wizard, AI key connection, website import, uploads, articles, answer engine | Built, in testing |
 | 3 | Chat bubble, hosted help page, handoff emails, business dashboard, self hosting | Planned |
 
