@@ -20,7 +20,31 @@ export type Bot = {
   provider: Provider | null;
   model: string | null;
   setup_step: number;
+  slug: string | null;
+  installed_at: string | null;
+  installed_on: string | null;
+  retention_days: 30 | 90 | 365;
+  show_powered_by: boolean;
 };
+
+export function slugify(s: string) {
+  return s.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "help";
+}
+
+// Gives every bot a public help page address like /help/joes-bakery (FRD F10.7).
+async function ensureSlug(bot: Bot, accountName: string): Promise<Bot> {
+  if (bot.slug) return bot;
+  const admin = supabaseAdmin();
+  const base = slugify(accountName.replace(/\(.*?\)/g, ""));
+  for (let i = 0; i < 5; i++) {
+    const slug = i === 0 ? base : `${base}-${Math.random().toString(36).slice(2, 6)}`;
+    const { data, error } = await admin.from("bots").update({ slug }).eq("id", bot.id).is("slug", null).select("*").maybeSingle();
+    if (!error && data) return data as Bot;
+    if (!error && !data) break;
+  }
+  const { data } = await admin.from("bots").select("*").eq("id", bot.id).single();
+  return (data as Bot) ?? bot;
+}
 
 export type Account = { id: string; name: string; website: string | null; status: string; contact_email: string; limits: Limits };
 
@@ -29,14 +53,14 @@ export type BusinessContext = { me: Profile; account: Account; bot: Bot };
 export async function getOrCreateBot(accountId: string, name?: string): Promise<Bot> {
   const admin = supabaseAdmin();
   const { data } = await admin.from("bots").select("*").eq("account_id", accountId).maybeSingle();
-  if (data) return data as Bot;
+  if (data) return data.slug ? (data as Bot) : ensureSlug(data as Bot, name ?? "help");
   const { data: created, error } = await admin
     .from("bots")
     .upsert({ account_id: accountId, ...(name ? { name: `${name} assistant`.slice(0, 60) } : {}) }, { onConflict: "account_id" })
     .select("*")
     .single();
   if (error || !created) throw new Error(`Could not create bot: ${error?.message}`);
-  return created as Bot;
+  return ensureSlug(created as Bot, name ?? "help");
 }
 
 // For business pages and actions: signed in, linked to an approved (or paused) business.

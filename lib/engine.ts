@@ -108,7 +108,7 @@ export async function answerQuestion(opts: { account: Account; bot: Bot; questio
     confidence: "low",
     handoff: true,
     handoffReason: reason,
-    ticket: { summary: reason, category, priority, customerQuestion: question },
+    ticket: { summary: `${reason}: ${question.length > 90 ? question.slice(0, 90) + "..." : question}`, category, priority, customerQuestion: question },
     redacted,
     status: "handoff",
   });

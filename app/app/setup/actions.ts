@@ -92,3 +92,34 @@ export async function setSetupStep(step: number): Promise<void> {
   if (n > bot.setup_step) await supabaseAdmin().from("bots").update({ setup_step: n }).eq("id", bot.id);
   revalidatePath("/app/setup");
 }
+
+export type SaveResult = { ok: boolean; error?: string };
+
+// FRD F6.7: customization. Validated on the server; nothing here costs money.
+export async function saveCustomization(form: FormData): Promise<SaveResult> {
+  const { me, account, bot } = await requireBusiness("/app/setup?step=5");
+  const get = (k: string, max: number) => String(form.get(k) ?? "").trim().slice(0, max);
+  const name = get("name", 60) || "Help assistant";
+  const welcome = get("welcome_message", 300) || "Hi! Ask me anything about our business.";
+  const color = get("brand_color", 7);
+  if (!/^#[0-9a-fA-F]{6}$/.test(color)) return { ok: false, error: "Pick a color." };
+  const logo = get("logo_url", 500);
+  if (logo && !/^https:\/\/[^\s"'<>]+$/.test(logo)) return { ok: false, error: "The logo must be a link starting with https://" };
+  const position = get("bubble_position", 5) === "left" ? "left" : "right";
+  const handoff = get("handoff_email", 200).toLowerCase();
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(handoff)) return { ok: false, error: "Add the email address where customer questions should go." };
+  const hours = get("hours_note", 200) || null;
+  const keywords = get("custom_keywords", 600).split(",").map((k) => k.trim().toLowerCase()).filter((k) => k.length >= 3).slice(0, 20);
+  const slugIn = get("slug", 40).toLowerCase();
+  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slugIn) || slugIn.length < 3) return { ok: false, error: "The help page address can use letters, numbers and single dashes, at least 3 characters." };
+  const retention = [30, 90, 365].includes(Number(form.get("retention_days"))) ? Number(form.get("retention_days")) : bot.retention_days;
+
+  const { error } = await supabaseAdmin()
+    .from("bots")
+    .update({ name, welcome_message: welcome, brand_color: color.toLowerCase(), logo_url: logo || null, bubble_position: position, handoff_email: handoff, hours_note: hours, custom_keywords: keywords, slug: slugIn, retention_days: retention, setup_step: Math.max(bot.setup_step, 6), updated_at: new Date().toISOString() })
+    .eq("id", bot.id);
+  if (error) return { ok: false, error: error.code === "23505" ? "That help page address is taken. Try another." : "Could not save. Please try again." };
+  await logEvent(account.id, me.id, "bot_customized");
+  revalidatePath("/app/setup");
+  return { ok: true };
+}

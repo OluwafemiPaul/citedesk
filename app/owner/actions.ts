@@ -7,6 +7,7 @@ import { sendEmail } from "@/lib/email";
 import { addNotice } from "@/lib/notices";
 import { DEFAULT_LIMITS, LIMIT_LABELS, type Limits } from "@/lib/limits";
 import { SITE_URL } from "@/lib/config";
+import { approveAccessRequest } from "@/lib/approve";
 
 const str = (f: FormData, k: string, max = 1000) => String(f.get(k) ?? "").trim().slice(0, max);
 
@@ -17,41 +18,7 @@ async function logEvent(accountId: string | null, actor: string, event: string, 
 // FRD F2.3, F2.4: approve a request, creating (or reopening) the business account.
 export async function approveRequest(form: FormData) {
   const owner = await requireOwner();
-  const admin = supabaseAdmin();
-  const id = str(form, "id", 64);
-  const { data: r } = await admin.from("access_requests").select("*").eq("id", id).single();
-  if (!r || r.status === "approved") return;
-
-  const fields = {
-    name: r.business_name,
-    website: r.website,
-    business_type: r.business_type,
-    contact_name: r.contact_name,
-    contact_email: r.email.toLowerCase(),
-    status: "approved",
-    approved_at: new Date().toISOString(),
-    status_reason: null,
-  };
-  const { data: existing } = await admin.from("accounts").select("id").ilike("contact_email", r.email).maybeSingle();
-  const { data: account } = existing
-    ? await admin.from("accounts").update(fields).eq("id", existing.id).select("id").single()
-    : await admin.from("accounts").insert({ ...fields, limits: DEFAULT_LIMITS }).select("id").single();
-  if (!account) return;
-
-  await admin
-    .from("access_requests")
-    .update({ status: "approved", account_id: account.id, reviewed_by: owner.id, reviewed_at: new Date().toISOString() })
-    .eq("id", id);
-  await admin.from("profiles").update({ account_id: account.id }).ilike("email", r.email).is("account_id", null);
-  await logEvent(account.id, owner.id, "approved", { request_id: id });
-  await addNotice(account.id, "approved", "Welcome to CiteDesk", `${r.business_name} is approved for the pilot. The setup steps below walk you through connecting your AI key, importing your website and adding the chat to your site.`);
-  await sendEmail({
-    kind: "approved",
-    accountId: account.id,
-    to: r.email,
-    subject: "You're approved for CiteDesk",
-    text: `Hi ${r.contact_name},\n\nGood news: ${r.business_name} is approved for the CiteDesk pilot.\n\nSign in here with this email address, and the setup wizard will walk you through importing your website and adding the chat to your site:\n${SITE_URL}/login\n\nReply to this email if you have any questions.\n\nThe CiteDesk team`,
-  });
+  await approveAccessRequest(str(form, "id", 64), owner.id);
   revalidatePath("/owner");
 }
 
@@ -125,6 +92,7 @@ export async function updateSettings(form: FormData) {
   const update = {
     requests_paused: form.get("requests_paused") === "on",
     imports_paused: form.get("imports_paused") === "on",
+    auto_approve: form.get("auto_approve") === "on",
     cost_alert_usd: Number.isFinite(cost) && cost >= 0 ? cost : 10,
     updated_at: new Date().toISOString(),
   };

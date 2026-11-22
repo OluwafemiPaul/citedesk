@@ -1,7 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { getKeyStatus, type Bot } from "@/lib/bot";
 
-// The setup wizard steps (FRD F6.1). Steps 5 and 6 arrive in Week 3.
+// The setup wizard steps (FRD F6.1).
 export const STEPS = [
   { n: 1, title: "Connect your AI key", short: "AI key" },
   { n: 2, title: "Add your knowledge", short: "Knowledge" },
@@ -23,8 +23,8 @@ export async function getProgress(bot: Bot) {
     2: (total ?? 0) > 0,
     3: (approved ?? 0) > 0,
     4: bot.setup_step > 4,
-    5: bot.setup_step > 5,
-    6: bot.setup_step > 6,
+    5: bot.setup_step > 5 && Boolean(bot.handoff_email),
+    6: bot.setup_step > 6 || Boolean(bot.installed_at),
   };
   return { key, total: total ?? 0, approved: approved ?? 0, done, completed: Object.values(done).filter(Boolean).length };
 }

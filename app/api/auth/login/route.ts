@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured, SITE_URL } from "@/lib/config";
 import { supabaseAdmin, supabaseServer } from "@/lib/supabase/server";
-import { platformOwnerEmail } from "@/lib/auth";
+import { needsFirstOwner, platformOwnerEmail } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   const next = typeof body.next === "string" && body.next.startsWith("/") && !body.next.startsWith("//") ? body.next : "/app";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: "Please enter a valid email address." }, { status: 400 });
 
-  let allowed = email === platformOwnerEmail();
+  let allowed = email === platformOwnerEmail() || (await needsFirstOwner());
   if (!allowed) {
     const { data } = await supabaseAdmin().from("accounts").select("status").ilike("contact_email", email).maybeSingle();
     allowed = data?.status === "approved" || data?.status === "paused";

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { approveAccessRequest } from "@/lib/approve";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { sendEmail } from "@/lib/email";
@@ -48,7 +49,7 @@ export async function POST(req: Request) {
   }
 
   const admin = supabaseAdmin();
-  const { data: settings } = await admin.from("platform_settings").select("requests_paused").eq("id", 1).single();
+  const { data: settings } = await admin.from("platform_settings").select("requests_paused,auto_approve").eq("id", 1).single();
   if (settings?.requests_paused) return NextResponse.json({ error: "New requests are paused right now." }, { status: 403 });
 
   // Rate limits (FRD F1.4): 3 per email and 5 per IP address per day.
@@ -74,6 +75,12 @@ export async function POST(req: Request) {
   if (error || !request) {
     console.error("access request insert failed", error);
     return NextResponse.json({ error: "Could not save your request. Please try again." }, { status: 500 });
+  }
+
+  // Self hosted mode (FRD F13.3): approve straight away when the owner turned on auto approve.
+  if (settings?.auto_approve) {
+    await approveAccessRequest(request.id, null);
+    return NextResponse.json({ ok: true, approved: true });
   }
 
   await Promise.all([

@@ -7,6 +7,10 @@ export const PROVIDERS: { id: Provider; label: string; keyPrefix: string; consol
   { id: "openai", label: "OpenAI (GPT)", keyPrefix: "sk-", consoleUrl: "https://platform.openai.com/api-keys", billingUrl: "https://platform.openai.com/settings/organization/limits" },
 ];
 
+// Optional overrides for self hosters behind a proxy or gateway (and for tests).
+const ANTHROPIC = (process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com").replace(/\/$/, "");
+const OPENAI = (process.env.OPENAI_BASE_URL || "https://api.openai.com").replace(/\/$/, "");
+
 export function isProvider(p: unknown): p is Provider {
   return p === "anthropic" || p === "openai";
 }
@@ -57,12 +61,12 @@ const OPENAI_SKIP = /(audio|realtime|transcribe|tts|image|search|embedding|moder
 // Lists the chat models this key can use, cheapest sensible default first.
 export async function listModels(provider: Provider, apiKey: string): Promise<ModelOption[]> {
   if (provider === "anthropic") {
-    const data = await call(provider, "https://api.anthropic.com/v1/models?limit=100", apiKey);
+    const data = await call(provider, `${ANTHROPIC}/v1/models?limit=100`, apiKey);
     const models: ModelOption[] = (data.data ?? []).map((m: { id: string; display_name?: string }) => ({ id: m.id, label: m.display_name || m.id }));
     // Newest first from the API; put the newest Haiku (lowest cost) first.
     return [...models.filter((m) => /haiku/i.test(m.id)), ...models.filter((m) => !/haiku/i.test(m.id))];
   }
-  const data = await call(provider, "https://api.openai.com/v1/models", apiKey);
+  const data = await call(provider, `${OPENAI}/v1/models`, apiKey);
   const models = (data.data ?? [])
     .filter((m: { id: string }) => /^(gpt-|o\d)/i.test(m.id) && !OPENAI_SKIP.test(m.id) && !/\d{4}-\d{2}-\d{2}/.test(m.id))
     .sort((a: { created: number }, b: { created: number }) => (b.created ?? 0) - (a.created ?? 0))
@@ -74,13 +78,13 @@ export async function listModels(provider: Provider, apiKey: string): Promise<Mo
 // One tiny generation to prove the key can actually answer (has credit, model allowed).
 export async function pingModel(provider: Provider, apiKey: string, model: string): Promise<void> {
   if (provider === "anthropic") {
-    await call(provider, "https://api.anthropic.com/v1/messages", apiKey, {
+    await call(provider, `${ANTHROPIC}/v1/messages`, apiKey, {
       method: "POST",
       body: JSON.stringify({ model, max_tokens: 5, messages: [{ role: "user", content: "Reply with OK." }] }),
     });
     return;
   }
-  await call(provider, "https://api.openai.com/v1/chat/completions", apiKey, {
+  await call(provider, `${OPENAI}/v1/chat/completions`, apiKey, {
     method: "POST",
     body: JSON.stringify({ model, max_completion_tokens: 64, messages: [{ role: "user", content: "Reply with OK." }] }),
   });
@@ -101,7 +105,7 @@ export async function structuredCall(opts: {
 }): Promise<{ input: Record<string, unknown>; inputTokens: number; outputTokens: number }> {
   const maxTokens = opts.maxTokens ?? 900;
   if (opts.provider === "anthropic") {
-    const data = await call(opts.provider, "https://api.anthropic.com/v1/messages", opts.apiKey, {
+    const data = await call(opts.provider, `${ANTHROPIC}/v1/messages`, opts.apiKey, {
       method: "POST",
       body: JSON.stringify({
         model: opts.model,
@@ -116,7 +120,7 @@ export async function structuredCall(opts: {
     if (!block) throw new ProviderError("The AI did not return a structured reply.");
     return { input: block.input ?? {}, inputTokens: data.usage?.input_tokens ?? 0, outputTokens: data.usage?.output_tokens ?? 0 };
   }
-  const data = await call(opts.provider, "https://api.openai.com/v1/chat/completions", opts.apiKey, {
+  const data = await call(opts.provider, `${OPENAI}/v1/chat/completions`, opts.apiKey, {
     method: "POST",
     body: JSON.stringify({
       model: opts.model,

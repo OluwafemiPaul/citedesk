@@ -4,6 +4,9 @@ import { getProgress, STEPS } from "@/lib/setup";
 import { BusinessShell } from "@/components/BusinessShell";
 import { KeyStep } from "./KeyStep";
 import { PreviewChat } from "./PreviewChat";
+import { CustomizeStep } from "./CustomizeStep";
+import { InstallStep } from "./InstallStep";
+import { supabaseAdmin } from "@/lib/supabase/server";
 import { setSetupStep } from "./actions";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +21,8 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
   const step = Math.min(6, Math.max(1, Number(stepParam) || firstOpen));
   const paused = !canUseResources(account);
   const current = STEPS[step - 1];
+  const { data: domainRows } = await supabaseAdmin().from("domains").select("domain").eq("account_id", account.id).not("verified_at", "is", null);
+  const domains = (domainRows ?? []).map((d) => d.domain);
 
   return (
     <BusinessShell me={me}>
@@ -105,11 +110,9 @@ export default async function SetupPage({ searchParams }: { searchParams: Promis
           </div>
         )}
 
-        {step >= 5 && (
-          <p className="text-sm text-slate-600">
-            {step === 5 ? "Name, welcome message, colors, logo and handoff email" : "The one line install code and guides for Wix, Squarespace, Shopify, WordPress and Webflow"} arrive in the next update. Everything you set up so far is saved.
-          </p>
-        )}
+        {step === 5 && <CustomizeStep bot={bot} defaultEmail={account.contact_email} />}
+
+        {step === 6 && <InstallStep bot={bot} domains={domains} />}
       </section>
     </BusinessShell>
   );

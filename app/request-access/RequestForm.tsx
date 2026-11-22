@@ -8,6 +8,7 @@ const PAGES = ["Under 20", "20 to 50", "50 to 200", "Over 200"];
 
 export function RequestForm({ turnstileSiteKey }: { turnstileSiteKey: string }) {
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
+  const [approved, setApproved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function submit(e: React.FormEvent<HTMLFormElement>) {
@@ -20,6 +21,7 @@ export function RequestForm({ turnstileSiteKey }: { turnstileSiteKey: string }) 
       const res = await fetch("/api/request-access", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Something went wrong");
+      setApproved(Boolean(data.approved));
       setState("done");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -27,6 +29,15 @@ export function RequestForm({ turnstileSiteKey }: { turnstileSiteKey: string }) 
       // A failed bot check token cannot be reused.
       (window as unknown as { turnstile?: { reset: () => void } }).turnstile?.reset();
     }
+  }
+
+  if (state === "done" && approved) {
+    return (
+      <div className="text-center">
+        <p className="text-lg font-medium">You are approved.</p>
+        <p className="mt-2 text-sm text-slate-600">We emailed you too. <a href="/login" className="text-indigo-700 underline">Sign in</a> with this email address to set up your assistant.</p>
+      </div>
+    );
   }
 
   if (state === "done") {

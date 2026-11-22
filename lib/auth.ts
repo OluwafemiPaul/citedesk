@@ -13,6 +13,13 @@ export function platformOwnerEmail() {
   return (process.env.PLATFORM_OWNER_EMAIL || "").trim().toLowerCase();
 }
 
+// Self hosted mode (FRD F13.3): with no PLATFORM_OWNER_EMAIL set, the first person to sign in becomes the owner.
+export async function needsFirstOwner(): Promise<boolean> {
+  if (platformOwnerEmail()) return false;
+  const { count } = await supabaseAdmin().from("profiles").select("id", { count: "exact", head: true }).eq("role", "platform_owner");
+  return (count ?? 0) === 0;
+}
+
 // Returns the signed in person's profile, or null. Also makes sure the platform owner
 // email always has the platform owner role and links business owners to their account.
 export async function currentProfile(): Promise<Profile | null> {
@@ -32,8 +39,8 @@ export async function currentProfile(): Promise<Profile | null> {
   if (!profile) return null;
 
   const updates: Record<string, unknown> = {};
-  if (email === platformOwnerEmail() && profile.role !== "platform_owner") updates.role = "platform_owner";
-  if (!profile.account_id && email !== platformOwnerEmail()) {
+  if (profile.role !== "platform_owner" && (email === platformOwnerEmail() || (!profile.account_id && (await needsFirstOwner())))) updates.role = "platform_owner";
+  if (!profile.account_id && email !== platformOwnerEmail() && updates.role !== "platform_owner" && profile.role !== "platform_owner") {
     const { data: acct } = await admin.from("accounts").select("id").ilike("contact_email", email).maybeSingle();
     if (acct) updates.account_id = acct.id;
   }

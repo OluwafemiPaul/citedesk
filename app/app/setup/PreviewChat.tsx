@@ -14,7 +14,7 @@ export function PreviewChat({ botName, welcome, color }: { botName: string; welc
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }), [msgs, busy]);
+  useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }, [msgs, busy]);
 
   async function send(e: React.FormEvent) {
     e.preventDefault();

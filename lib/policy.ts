@@ -1,15 +1,15 @@
 // Rules that run before and after the model, so the most important safety
 // behavior does not depend on the model getting it right every time.
 
-const CARD_NUMBER = /\b(?:\d[ ]?){13,19}\b/g;
-const SSN = /\b\d{3}[ ]?\d{2}[ ]?\d{4}\b/g;
+const CARD_NUMBER = /\b(?:\d[ -]?){13,19}\b/g;
+const SSN = /\b\d{3}[ -]?\d{2}[ -]?\d{4}\b/g;
 
 export function redactSensitive(text: string): { text: string; redacted: boolean } {
   let redacted = false;
   const out = text
-    .replace(CARD_NUMBER, () => {
+    .replace(CARD_NUMBER, (m) => {
       redacted = true;
-      return "[card number removed]";
+      return "[card number removed]" + (/[\s-]$/.test(m) ? " " : "");
     })
     .replace(SSN, () => {
       redacted = true;

@@ -215,6 +215,9 @@ export default async function OwnerPage() {
             <label className="flex items-center gap-2">
               <input type="checkbox" name="imports_paused" defaultChecked={settings?.imports_paused} /> Pause all website imports
             </label>
+            <label className="flex items-center gap-2" title="Approve every request immediately. Useful when you run your own copy for your team.">
+              <input type="checkbox" name="auto_approve" defaultChecked={settings?.auto_approve} /> Approve requests automatically
+            </label>
             <label className="flex items-center gap-2">
               Cost alert at $
               <input type="number" step="0.5" min={0} name="cost_alert_usd" defaultValue={settings?.cost_alert_usd ?? 10} className="w-20 rounded border border-slate-300 px-2 py-1" />
