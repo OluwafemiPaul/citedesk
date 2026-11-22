@@ -20,7 +20,7 @@
 | Week | Scope | Status |
 |---|---|---|
 | 1 | Landing page, request access, owner approval, sign in, owner dashboard, plan limits, usage alerts | In progress |
-| 2 | Setup wizard, AI key connection, website import, uploads, articles, answer engine | Planned |
+| 2 | Setup wizard, AI key connection, website import, uploads, articles, answer engine | Built, in testing |
 | 3 | Chat bubble, hosted help page, handoff emails, business dashboard, self hosting | Planned |
 
 Product docs: PRD and FRD (linked in the project notes).
@@ -36,8 +36,8 @@ You need Node.js 20 or newer and a free [Supabase](https://supabase.com) project
    npm install
    cp .env.example .env.local
    ```
-2. In Supabase, open **SQL Editor** and run each file in `supabase/migrations` in order (`0001_foundation.sql`, then `0002_email_log_and_notices.sql`).
-3. Fill in `.env.local`: your Supabase URL and keys, and your email as `PLATFORM_OWNER_EMAIL`.
+2. In Supabase, open **SQL Editor** and run each file in `supabase/migrations` in order (`0001_foundation.sql`, `0002_email_log_and_notices.sql`, then `0003_bots_knowledge.sql`).
+3. Fill in `.env.local`: your Supabase URL and keys, your email as `PLATFORM_OWNER_EMAIL`, and a random `ENCRYPTION_KEY` (the command is in `.env.example`).
 4. In Supabase, open **Authentication, URL Configuration** and add `http://localhost:3000/auth/callback` to Redirect URLs.
 5. Start it:
    ```bash

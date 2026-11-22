@@ -4,12 +4,14 @@ import { requireUser } from "@/lib/auth";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { getUsage, METERED, withDefaults } from "@/lib/limits";
 import { SiteHeader } from "@/components/SiteHeader";
+import { getOrCreateBot } from "@/lib/bot";
+import { getProgress, STEPS } from "@/lib/setup";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Your dashboard | CiteDesk" };
 
 // Business owner home. Week 1 shows account status and plan usage;
-// the setup wizard, knowledge base and chat settings arrive in Weeks 2 and 3.
+// links into the setup wizard (Week 2).
 export default async function BusinessHome() {
   const me = await requireUser();
   const header = (
@@ -47,6 +49,7 @@ export default async function BusinessHome() {
     .order("created_at", { ascending: false })
     .limit(10);
   const limits = withDefaults(account?.limits);
+  const progress = account && ["approved", "paused"].includes(account.status) ? await getProgress(await getOrCreateBot(account.id, account.name)) : null;
 
   return (
     <>
@@ -82,16 +85,21 @@ export default async function BusinessHome() {
         )}
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6">
-          <h2 className="font-semibold">Set up your assistant</h2>
-          <ol className="mt-3 space-y-2 text-sm">
-            {["Connect your AI key", "Import your website or upload documents", "Review your help articles", "Test and customize your bot", "Add the chat to your website"].map((s, i) => (
-              <li key={s} className="flex items-center gap-3">
-                <span className="grid h-6 w-6 place-items-center rounded-full bg-slate-100 text-xs">{i + 1}</span>
-                <span className="text-slate-700">{s}</span>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-semibold">Set up your assistant</h2>
+              <p className="text-sm text-slate-600">{progress ? `${progress.completed} of 6 steps done` : "Not started"}</p>
+            </div>
+            <Link href="/app/setup" className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white">{progress?.completed ? "Continue setup" : "Start setup"}</Link>
+          </div>
+          <ol className="mt-4 grid gap-2 text-sm md:grid-cols-3">
+            {STEPS.map((s) => (
+              <li key={s.n} className="flex items-center gap-2">
+                <span className={`grid h-6 w-6 place-items-center rounded-full text-xs ${progress?.done[s.n] ? "bg-green-100 text-green-800" : "bg-slate-100"}`}>{progress?.done[s.n] ? "✓" : s.n}</span>
+                <Link href={`/app/setup?step=${s.n}`} className="text-slate-700 hover:underline">{s.title}</Link>
               </li>
             ))}
           </ol>
-          <p className="mt-4 rounded-lg bg-indigo-50 p-3 text-sm text-indigo-900">The setup wizard is being built and opens to pilot businesses soon. We will email you when it is ready.</p>
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6">

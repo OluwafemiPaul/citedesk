@@ -12,13 +12,17 @@
   "license": "AGPL-3.0-only",
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
+    "@mozilla/readability": "^0.6.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
+    "linkedom": "^0.18.15",
+    "mammoth": "^1.13.0",
     "next": "^16.4.6",
     "nodemailer": "^10.5.0",
     "openai": "^7.57.0",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "unpdf": "^1.9.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.5",
