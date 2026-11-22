@@ -7,6 +7,12 @@ export function generateStaticParams() {
   return loadArticles().map((a) => ({ id: a.id }));
 }
 
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const article = getArticle(id);
+  return { title: article ? `${article.title} | Ledgerly help center (CiteDesk demo)` : "Help article" };
+}
+
 export default async function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const article = getArticle(id);
